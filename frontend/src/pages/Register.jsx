@@ -26,6 +26,7 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [username, setUsername] = useState('')
+  const [secretCode, setSecretCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
@@ -38,8 +39,8 @@ export default function Register() {
     setError('')
     setLoading(true)
     try {
-      await register(email, password, displayName, username.trim() || undefined)
-      navigate('/verify-email')
+      await register(email, password, displayName, username.trim() || undefined, secretCode.trim())
+      navigate('/')
     } catch (err) {
       setError(err.message || 'Ошибка регистрации')
     } finally {
@@ -83,6 +84,14 @@ export default function Register() {
             placeholder="Пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-white/40 focus:outline-none transition-colors"
+            required
+          />
+          <input
+            type="text"
+            placeholder="Секретный код"
+            value={secretCode}
+            onChange={(e) => setSecretCode(e.target.value)}
             className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-white/40 focus:outline-none transition-colors"
             required
           />

@@ -91,13 +91,13 @@ export function AuthProvider({ children }) {
     return d
   }, [])
 
-  const register = useCallback(async (email, password, display_name = '', username = '') => {
+  const register = useCallback(async (email, password, display_name = '', username = '', secret_code = '') => {
     let res
     try {
       res = await fetch(`${API}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, display_name, username: username || undefined }),
+        body: JSON.stringify({ email, password, display_name, username: username || undefined, secret_code: secret_code || '' }),
       })
     } catch (e) {
       throw new Error('Не удалось подключиться к серверу. Запущен ли бэкенд на порту 8000?')

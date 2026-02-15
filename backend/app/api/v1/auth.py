@@ -9,7 +9,7 @@ from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.chat import Chat, chat_members
 from app.core.security import verify_password, get_password_hash, create_access_token
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, SECRET_REGISTRATION_CODE
 from sqlalchemy import insert
 
 router = APIRouter()
@@ -104,6 +104,9 @@ async def verify_email_and_issue_token(body: VerifyBody, db: AsyncSession = Depe
 @router.post("/register", response_model=Token)
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
+        if (data.secret_code or "").strip() != SECRET_REGISTRATION_CODE:
+            print(f"[Bridge Register] Неверный секретный код", flush=True)
+            raise HTTPException(status_code=400, detail="Неверный секретный код")
         result = await db.execute(select(User).where(User.email == data.email))
         if result.scalar_one_or_none():
             print(f"[Bridge Register] Ошибка: email уже зарегистрирован: {data.email}", flush=True)
@@ -114,16 +117,12 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
             if r2.scalar_one_or_none():
                 print(f"[Bridge Register] Ошибка: username занят: {username_val}", flush=True)
                 raise HTTPException(status_code=400, detail="Username already taken")
-        code_6 = "".join(random.choices("0123456789", k=6))
-        expires = datetime.now(timezone.utc) + timedelta(minutes=15)
         user = User(
             email=data.email,
             hashed_password=get_password_hash(data.password),
             display_name=data.display_name or "",
             username=username_val,
             email_verified=True,
-            verification_code=code_6,
-            verification_code_expires=expires,
         )
         db.add(user)
         await db.flush()

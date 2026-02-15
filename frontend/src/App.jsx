@@ -19,9 +19,8 @@ function RequireToken({ children }) {
 }
 
 function ProtectedRoute({ children }) {
-  const { token, user } = useAuth()
+  const { token } = useAuth()
   if (!token) return <Navigate to="/login" replace />
-  if (user && user.email_verified === false) return <Navigate to="/verify-email" replace />
   return children
 }
 

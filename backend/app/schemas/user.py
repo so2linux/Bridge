@@ -6,11 +6,15 @@ from datetime import datetime
 USERNAME_PATTERN = re.compile(r"^[a-zA-Z]{5,12}$")
 
 
+SECRET_REGISTRATION_CODE = "tigran_lox"
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
     display_name: Optional[str] = ""
     username: Optional[str] = None
+    secret_code: str = ""
 
     @field_validator("username")
     @classmethod
