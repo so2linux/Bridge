@@ -22,4 +22,4 @@ COPY backend/ ./
 COPY --from=builder /app/frontend/dist ./frontend_dist
 
 EXPOSE 8000
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}
