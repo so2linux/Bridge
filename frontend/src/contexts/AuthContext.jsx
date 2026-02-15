@@ -135,6 +135,18 @@ export function AuthProvider({ children }) {
     if (accounts.some((a) => a.user?.id === userId)) setCurrentId(userId)
   }, [accounts])
 
+  const completeVerify = useCallback((accessToken, userData) => {
+    if (!accessToken || !userData?.id) return
+    const acc = { token: accessToken, user: userData }
+    setAccountsState((prev) => {
+      const rest = prev.filter((a) => a.user?.id !== userData.id)
+      const next = [acc, ...rest].slice(0, MAX_ACCOUNTS)
+      saveAccounts(next)
+      return next
+    })
+    setCurrentId(userData.id)
+  }, [])
+
   const refreshUser = useCallback(async () => {
     const t = token || currentAccount?.token
     if (!t) return
@@ -171,6 +183,8 @@ export function AuthProvider({ children }) {
         logoutAll,
         fetchWithAuth,
         refreshUser,
+        completeVerify,
+        apiBase: API,
       }}
     >
       {children}

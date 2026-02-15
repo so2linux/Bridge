@@ -54,12 +54,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: для Render нужен широкий доступ
+# CORS: все методы и заголовки для Render
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 

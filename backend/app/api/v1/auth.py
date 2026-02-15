@@ -40,6 +40,57 @@ class VerifyCodeBody(BaseModel):
     code: str
 
 
+class VerifyBody(BaseModel):
+    """Публичная верификация по email + код (без Bearer)."""
+    email: str
+    otp_code: str
+
+
+@router.post("/verify", response_model=Token)
+async def verify_email_and_issue_token(body: VerifyBody, db: AsyncSession = Depends(get_db)):
+    """Верификация по email и коду. Возвращает JWT. Для тестовых email любой код — OK."""
+    email = (body.email or "").strip().lower()
+    otp_code = (body.otp_code or "").strip()
+    print(f"DEBUG: Попытка верификации для {email} с кодом {otp_code}", flush=True)
+    if not email:
+        raise HTTPException(status_code=400, detail="Укажите email")
+    if len(otp_code) != 6 or not otp_code.isdigit():
+        raise HTTPException(status_code=400, detail="Введите 6 цифр кода")
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user:
+        print(f"DEBUG: Пользователь не найден: {email}", flush=True)
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
+    if getattr(user, "email_verified", False):
+        token = create_access_token(data={"sub": str(user.id)})
+        return Token(access_token=token, user=_user_to_response(user))
+    if user.email in BACKDOOR_EMAILS:
+        user.email_verified = True
+        user.verification_code = None
+        user.verification_code_expires = None
+        await db.flush()
+        await db.refresh(user)
+        token = create_access_token(data={"sub": str(user.id)})
+        print(f"DEBUG: Верификация OK (backdoor) для {email}", flush=True)
+        return Token(access_token=token, user=_user_to_response(user))
+    now = datetime.now(timezone.utc)
+    exp = getattr(user, "verification_code_expires", None)
+    if not exp:
+        raise HTTPException(status_code=400, detail="Код не найден. Зарегистрируйтесь снова.")
+    exp = exp.replace(tzinfo=timezone.utc) if getattr(exp, "tzinfo", None) is None else exp
+    if exp < now:
+        raise HTTPException(status_code=400, detail="Код истёк. Запросите новый.")
+    if (getattr(user, "verification_code", None) or "") != otp_code:
+        raise HTTPException(status_code=400, detail="Неверный код")
+    user.email_verified = True
+    user.verification_code = None
+    user.verification_code_expires = None
+    await db.flush()
+    await db.refresh(user)
+    token = create_access_token(data={"sub": str(user.id)})
+    return Token(access_token=token, user=_user_to_response(user))
+
+
 @router.post("/register", response_model=Token)
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     try:

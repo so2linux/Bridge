@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import GlassPanel from '../components/GlassPanel'
 
 export default function VerifyEmail() {
-  const { user, fetchWithAuth, refreshUser } = useAuth()
+  const { user, completeVerify } = useAuth()
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -50,18 +50,39 @@ export default function VerifyEmail() {
     }
     setError('')
     setLoading(true)
+    const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8000')
+    const url = `${base}/api/v1/auth/verify`
     try {
-      const res = await fetchWithAuth('/auth/verify-code', {
+      const res = await fetch(url, {
         method: 'POST',
-        body: JSON.stringify({ code: full }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user?.email || '', otp_code: full }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.detail || 'Неверный или истёкший код')
+        const errMsg = typeof data.detail === 'string' ? data.detail : data.detail?.message || 'Неверный или истёкший код'
+        console.error('[Verify] Ошибка:', res.status, data)
+        setError(errMsg)
+        alert('Ошибка: ' + errMsg)
         return
       }
-      await refreshUser()
-      navigate('/', { replace: true })
+      if (data.access_token && data.user) {
+        completeVerify(data.access_token, data.user)
+        if (typeof window !== 'undefined') {
+          window.location.href = '/'
+        } else {
+          navigate('/', { replace: true })
+        }
+      } else {
+        console.error('[Verify] Нет токена в ответе:', data)
+        setError('Нет токена в ответе')
+        alert('Ошибка: нет токена в ответе')
+      }
+    } catch (err) {
+      const msg = err?.message || 'Сеть или сервер недоступен'
+      console.error('[Verify] Исключение:', err)
+      setError(msg)
+      alert('Ошибка: ' + msg)
     } finally {
       setLoading(false)
     }
