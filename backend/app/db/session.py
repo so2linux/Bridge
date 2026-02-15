@@ -1,3 +1,4 @@
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from app.core.config import get_settings
@@ -8,6 +9,12 @@ Base = declarative_base()
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
+    connect_args={"check_same_thread": False},
+)
+
+# Синхронный движок для create_all при старте (в т.ч. Render)
+sync_engine = create_engine(
+    settings.DATABASE_URL_SYNC,
     connect_args={"check_same_thread": False},
 )
 

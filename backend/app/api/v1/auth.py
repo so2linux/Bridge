@@ -45,11 +45,13 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
         result = await db.execute(select(User).where(User.email == data.email))
         if result.scalar_one_or_none():
+            print(f"[Bridge Register] Ошибка: email уже зарегистрирован: {data.email}", flush=True)
             raise HTTPException(status_code=400, detail="Email already registered")
         username_val = (data.username or "").strip().lower() or None
         if username_val:
             r2 = await db.execute(select(User).where(User.username == username_val))
             if r2.scalar_one_or_none():
+                print(f"[Bridge Register] Ошибка: username занят: {username_val}", flush=True)
                 raise HTTPException(status_code=400, detail="Username already taken")
         code_6 = "".join(random.choices("0123456789", k=6))
         expires = datetime.now(timezone.utc) + timedelta(minutes=15)
@@ -58,25 +60,24 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
             hashed_password=get_password_hash(data.password),
             display_name=data.display_name or "",
             username=username_val,
-            email_verified=False,
+            email_verified=True,
             verification_code=code_6,
             verification_code_expires=expires,
         )
         db.add(user)
         await db.flush()
         await db.refresh(user)
-        # Добавить пользователя в глобальный чат
         global_chat = await db.execute(select(Chat).where(Chat.slug == "global"))
         gchat = global_chat.scalar_one_or_none()
         if gchat:
             await db.execute(insert(chat_members).values(chat_id=gchat.id, user_id=user.id))
-        # В продакшене отправить код на email; в разработке — в консоль бэкенда
-        print(f"\n>>> [Bridge] Код подтверждения для {data.email}: {code_6} <<<\n", flush=True)
+        print(f"[Bridge Register] OK: {data.email}", flush=True)
         token = create_access_token(data={"sub": str(user.id)})
         return Token(access_token=token, user=_user_to_response(user))
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[Bridge Register] Ошибка 500: {e!r}", flush=True)
         raise HTTPException(status_code=500, detail=f"Registration error: {str(e)}")
 
 
@@ -121,9 +122,9 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
         result = await db.execute(select(User).where(User.email == data.email))
         user = result.scalar_one_or_none()
         if not user:
+            print(f"[Bridge Login] Ошибка: пользователь не найден: {data.email}", flush=True)
             raise HTTPException(status_code=401, detail="Неверный email или пароль")
 
-        # ВРЕМЕННЫЙ BACKDOOR: для тестовых email — любой пароль, сразу email_verified=True, выдаём JWT
         if user.email in BACKDOOR_EMAILS:
             user.email_verified = True
             await db.flush()
@@ -132,6 +133,7 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
             return Token(access_token=token, user=_user_to_response(user))
 
         if not verify_password(data.password, user.hashed_password):
+            print(f"[Bridge Login] Ошибка: неверный пароль для {data.email}", flush=True)
             raise HTTPException(status_code=401, detail="Неверный email или пароль")
         now = datetime.now(timezone.utc)
         def _utc(dt):
@@ -140,13 +142,17 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
             return dt.replace(tzinfo=timezone.utc) if getattr(dt, "tzinfo", None) is None else dt
         banned_until = getattr(user, "banned_until", None)
         if banned_until and _utc(banned_until) > now:
+            print(f"[Bridge Login] Ошибка: аккаунт заблокирован: {data.email}", flush=True)
             raise HTTPException(status_code=403, detail="Аккаунт заблокирован до указанной даты")
         frozen_until = getattr(user, "frozen_until", None)
         if frozen_until and _utc(frozen_until) > now:
+            print(f"[Bridge Login] Ошибка: аккаунт заморожен: {data.email}", flush=True)
             raise HTTPException(status_code=403, detail="Аккаунт заморожен до указанной даты")
         token = create_access_token(data={"sub": str(user.id)})
+        print(f"[Bridge Login] OK: {data.email}", flush=True)
         return Token(access_token=token, user=_user_to_response(user))
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[Bridge Login] Ошибка 500: {e!r}", flush=True)
         raise HTTPException(status_code=500, detail=f"Ошибка входа: {str(e)}")

@@ -1,14 +1,18 @@
 from pathlib import Path
 from contextlib import asynccontextmanager
+from sqlalchemy import text
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.api.v1 import api_router
-from app.db.session import engine, Base
+from app.db.session import engine, sync_engine, Base
 import app.models  # noqa: F401 - register all models with Base.metadata
 from app.websocket import manager, get_user_from_ws
+
+# Таблицы создаются при старте (критично для Render)
+Base.metadata.create_all(bind=sync_engine)
 
 settings = get_settings()
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -18,12 +22,28 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 (STATIC_DIR / "voice").mkdir(exist_ok=True)
 
 
+def _ensure_global_chat_sync(conn):
+    """Создать чат slug=global, если его ещё нет."""
+    r = conn.execute(text("SELECT id FROM chats WHERE slug = 'global'"))
+    if r.fetchone():
+        return
+    conn.execute(text(
+        "INSERT INTO chats (slug, title, is_group, created_at, updated_at) VALUES "
+        "('global', 'Global Bridge 🌎', 1, datetime('now'), datetime('now'))"
+    ))
+    r = conn.execute(text("SELECT id FROM chats WHERE slug = 'global'"))
+    row = r.fetchone()
+    if row:
+        for (uid,) in conn.execute(text("SELECT id FROM users")):
+            conn.execute(text("INSERT OR IGNORE INTO chat_members (chat_id, user_id) VALUES (:cid, :uid)"), {"cid": row[0], "uid": uid})
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Добавить колонку username в старую БД, если её нет
         await conn.run_sync(lambda c: __import__("app.db.migrate", fromlist=["add_missing_columns"]).add_missing_columns(c))
+        await conn.run_sync(_ensure_global_chat_sync)
     yield
     await engine.dispose()
 
@@ -34,11 +54,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# С allow_credentials=True браузер не принимает "*" — указываем явные origin
-_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+# CORS: для Render нужен широкий доступ
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_origins if _origins else ["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
