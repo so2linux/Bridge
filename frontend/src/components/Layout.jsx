@@ -120,7 +120,7 @@ export default function Layout() {
                   ✕
                 </button>
               </div>
-              {user && (
+              {accounts.length > 0 && (
                 <div className="mb-4">
                   <button
                     type="button"

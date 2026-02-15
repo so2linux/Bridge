@@ -31,6 +31,9 @@ export default function ChatList() {
     )
   }
 
+  const globalChat = chats.find((c) => c.slug === 'global')
+  const otherChats = chats.filter((c) => c.slug !== 'global')
+
   return (
     <div className="p-4">
       <GlassPanel className="p-2">
@@ -39,7 +42,21 @@ export default function ChatList() {
           <p className="px-3 py-6 text-sm opacity-70 text-center">Пока нет чатов. Найди пользователя через поиск и начни диалог.</p>
         ) : (
           <ul className="divide-y divide-white/10">
-            {chats.map((c) => {
+            {globalChat && (
+              <li key={globalChat.id}>
+                <Link
+                  to={`/chat/${globalChat.id}`}
+                  className="flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/10 active:bg-white/15 transition-colors bg-white/5"
+                >
+                  <div className="w-12 h-12 rounded-full bg-amber-500/40 flex items-center justify-center text-lg shrink-0" aria-hidden>
+                    🌎
+                  </div>
+                  <span className="font-medium truncate flex-1">{globalChat.display_title || globalChat.title || 'Глобальный чат'}</span>
+                  <span className="text-white/40 text-sm">›</span>
+                </Link>
+              </li>
+            )}
+            {otherChats.map((c) => {
               const name = c.display_title || c.title || `Чат ${c.id}`
               const letter = name.slice(0, 1).toUpperCase()
               return (
