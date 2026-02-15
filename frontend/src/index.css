@@ -4,10 +4,15 @@
 
 @layer base {
   html {
-    @apply transition-colors duration-300;
+    @apply min-h-screen transition-colors duration-300;
   }
   body {
     @apply min-h-screen antialiased;
+    background: transparent !important;
+  }
+  #root {
+    min-height: 100vh;
+    background: transparent;
   }
 }
 
@@ -21,10 +26,13 @@
   @apply transition-all duration-300;
 }
 
-/* Theme: Light — мягкий серо-голубой фон */
+/* Theme: Light — мягкий серо-голубой фон (на html/body/root, чтобы фон был везде) */
+.theme-light,
+.theme-light body,
+.theme-light #root {
+  background: linear-gradient(160deg, #E5E7EB 0%, #dde2e8 50%, #d1d8e0 100%) !important;
+}
 .theme-light {
-  background: #E5E7EB;
-  background: linear-gradient(160deg, #E5E7EB 0%, #dde2e8 50%, #d1d8e0 100%);
   @apply text-slate-800;
 }
 
@@ -49,8 +57,12 @@
 }
 
 /* Theme: Dark (deep blue) */
+.theme-dark,
+.theme-dark body,
+.theme-dark #root {
+  background: linear-gradient(160deg, #0c1222 0%, #0f172a 40%, #1e293b 100%) !important;
+}
 .theme-dark {
-  background: linear-gradient(160deg, #0c1222 0%, #0f172a 40%, #1e293b 100%);
   @apply text-slate-100;
 }
 
@@ -72,8 +84,13 @@
 }
 
 /* Theme: OLED (pure black) */
+.theme-oled,
+.theme-oled body,
+.theme-oled #root {
+  background: #000000 !important;
+}
 .theme-oled {
-  @apply bg-black text-slate-200;
+  @apply text-slate-200;
 }
 
 .theme-oled .glass-panel {

@@ -5,6 +5,7 @@ const AuthContext = createContext(null)
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1'
 const ACCOUNTS_KEY = 'bridge_accounts'
 const TOKEN_KEY = 'token'
+const CURRENT_ID_KEY = 'bridge_current_account_id'
 const MAX_ACCOUNTS = 3
 
 function loadAccounts() {
@@ -20,14 +21,28 @@ function saveAccounts(accounts) {
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts.slice(0, MAX_ACCOUNTS)))
 }
 
+function sameId(a, b) {
+  if (a == null || b == null) return false
+  return String(a) === String(b)
+}
+
 export function AuthProvider({ children }) {
   const [accounts, setAccountsState] = useState(loadAccounts)
-  const [currentId, setCurrentId] = useState(() => {
+  const [currentId, setCurrentIdState] = useState(() => {
     const list = loadAccounts()
+    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(CURRENT_ID_KEY) : null
+    if (saved != null && list.some((a) => sameId(a.user?.id, saved))) return saved
     return list[0]?.user?.id ?? null
   })
 
-  const currentAccount = accounts.find((a) => a.user?.id === currentId)
+  const setCurrentId = useCallback((id) => {
+    setCurrentIdState(id)
+    if (typeof localStorage !== 'undefined' && id != null) {
+      localStorage.setItem(CURRENT_ID_KEY, String(id))
+    }
+  }, [])
+
+  const currentAccount = accounts.find((a) => sameId(a.user?.id, currentId))
   const token = currentAccount?.token ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null) ?? null
   const user = currentAccount?.user ?? null
 
@@ -44,11 +59,12 @@ export function AuthProvider({ children }) {
     const res = await fetch(`${API}${path}`, { ...options, headers })
     if (res.status === 401 && currentId) {
       setAccountsState((prev) => {
-        const next = prev.filter((a) => a.user?.id !== currentId)
+        const next = prev.filter((a) => !sameId(a.user?.id, currentId))
         saveAccounts(next)
         return next
       })
-      setCurrentId(loadAccounts()[0]?.user?.id ?? null)
+      const list = loadAccounts()
+      setCurrentId(list[0]?.user?.id ?? null)
     }
     return res
   }, [token, currentId, currentAccount])
@@ -123,8 +139,8 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(TOKEN_KEY)
-    setAccountsState((prev) => prev.filter((a) => a.user?.id !== currentId))
-    const rest = loadAccounts().filter((a) => a.user?.id !== currentId)
+    setAccountsState((prev) => prev.filter((a) => !sameId(a.user?.id, currentId)))
+    const rest = loadAccounts().filter((a) => !sameId(a.user?.id, currentId))
     saveAccounts(rest)
     setCurrentId(rest[0]?.user?.id ?? null)
   }, [currentId])
@@ -137,7 +153,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const setCurrentAccount = useCallback((userId) => {
-    if (accounts.some((a) => a.user?.id === userId)) setCurrentId(userId)
+    if (accounts.some((a) => sameId(a.user?.id, userId))) setCurrentId(userId)
   }, [accounts])
 
   const completeVerify = useCallback((accessToken, userData) => {

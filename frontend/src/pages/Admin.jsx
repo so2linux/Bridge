@@ -4,6 +4,7 @@ import GlassPanel from '../components/GlassPanel'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1'
 const ADMIN_EMAIL = 'tfamilia816@gmail.com'
+const isAdmin = (u) => u?.email === ADMIN_EMAIL || u?.username === 'admin'
 
 const DURATIONS = [
   { label: '1 час', hours: 1 },
@@ -24,7 +25,7 @@ export default function Admin() {
   const [msg, setMsg] = useState('')
 
   const load = async () => {
-    if (user?.email !== ADMIN_EMAIL) return
+    if (!isAdmin(user)) return
     setLoading(true)
     setError('')
     try {
@@ -36,6 +37,10 @@ export default function Admin() {
           const j = JSON.parse(text)
           detail = typeof j.detail === 'string' ? j.detail : (Array.isArray(j.detail) && j.detail[0]?.msg) ? j.detail.map((x) => x.msg).join(', ') : ''
         } catch (_) {}
+        if (res.status === 401 || (res.status === 404 && (detail || text).toLowerCase().includes('user not found'))) {
+          setError('Сессия устарела или аккаунт не найден в этой среде. Войдите снова.')
+          return
+        }
         const extra = text ? ` Ответ: ${text.slice(0, 300)}` : ''
         throw new Error(detail ? `${detail}${extra}` : `Ошибка загрузки: ${res.status} ${res.statusText}.${extra}`)
       }
@@ -49,9 +54,9 @@ export default function Admin() {
   }
 
   useEffect(() => {
-    if (user?.email !== ADMIN_EMAIL) return
+    if (!isAdmin(user)) return
     load()
-  }, [user?.email])
+  }, [user?.email, user?.username])
 
   const runAction = async (path, body = {}) => {
     if (!modalUser) return
@@ -103,7 +108,7 @@ export default function Admin() {
     setLightAmount('')
   }
 
-  if (user?.email !== ADMIN_EMAIL) {
+  if (!isAdmin(user)) {
     return (
       <div className="p-4">
         <GlassPanel className="p-6 text-center">
@@ -124,7 +129,10 @@ export default function Admin() {
   if (error) {
     return (
       <div className="p-4">
-        <GlassPanel className="p-6 text-center text-red-400">{error}</GlassPanel>
+        <GlassPanel className="p-6 text-center">
+          <p className="text-red-400 mb-3">{error}</p>
+          <a href="/login" className="text-indigo-400 underline">Войти снова</a>
+        </GlassPanel>
       </div>
     )
   }

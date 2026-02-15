@@ -132,9 +132,11 @@ export default function Layout() {
                   </button>
                   {accountsExpanded && (
                     <div className="space-y-1">
-                      {accounts.map((acc) => (
+                      {accounts.map((acc) => {
+                        const isCurrent = currentId != null && acc.user?.id != null && String(acc.user.id) === String(currentId)
+                        return (
                         <button
-                          key={acc.user?.id}
+                          key={acc.user?.id ?? acc.user?.email ?? Math.random()}
                           type="button"
                           onClick={() => {
                             setCurrentAccount(acc.user?.id)
@@ -142,7 +144,7 @@ export default function Layout() {
                             navigate('/', { replace: true })
                           }}
                           className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${
-                            acc.user?.id === currentId ? 'bg-white/20' : 'hover:bg-white/10'
+                            isCurrent ? 'bg-white/20' : 'hover:bg-white/10'
                           }`}
                         >
                           <div className="w-9 h-9 rounded-full bg-indigo-500/50 flex items-center justify-center text-sm font-medium">
@@ -155,7 +157,8 @@ export default function Layout() {
                             <p className="truncate text-xs opacity-70">{acc.user?.email}</p>
                           </div>
                         </button>
-                      ))}
+                        )
+                      })}
                       {accounts.length < 3 && (
                         <Link
                           to="/login?add=1"
