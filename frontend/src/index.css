@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply transition-colors duration-300;
+  }
+  body {
+    @apply min-h-screen antialiased;
+  }
+}
+
+/* Glassmorphism iOS 26: матовое стекло, blur 30px, радиус 28px */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 28px;
+  @apply transition-all duration-300;
+}
+
+/* Theme: Light — мягкий серо-голубой фон */
+.theme-light {
+  background: #E5E7EB;
+  background: linear-gradient(160deg, #E5E7EB 0%, #dde2e8 50%, #d1d8e0 100%);
+  @apply text-slate-800;
+}
+
+.theme-light .glass-panel {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 28px;
+}
+
+/* Облака сообщений — полупрозрачные, тонкая рамка */
+.theme-light .message-bubble {
+  @apply backdrop-blur-md border border-slate-200/60;
+}
+.theme-light .message-bubble-own {
+  background: linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0.12) 100%);
+  border-color: rgba(99,102,241,0.25);
+}
+.theme-light .message-bubble-other {
+  background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(248,250,252,0.6) 100%);
+}
+
+/* Theme: Dark (deep blue) */
+.theme-dark {
+  background: linear-gradient(160deg, #0c1222 0%, #0f172a 40%, #1e293b 100%);
+  @apply text-slate-100;
+}
+
+.theme-dark .glass-panel {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 28px;
+}
+
+.theme-dark .message-bubble-own {
+  @apply backdrop-blur-md border border-indigo-400/20;
+  background: linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(99,102,241,0.15) 100%);
+}
+.theme-dark .message-bubble-other {
+  @apply backdrop-blur-md border border-white/10;
+  background: linear-gradient(135deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.4) 100%);
+}
+
+/* Theme: OLED (pure black) */
+.theme-oled {
+  @apply bg-black text-slate-200;
+}
+
+.theme-oled .glass-panel {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 28px;
+}
+
+.theme-oled .message-bubble-own {
+  @apply backdrop-blur-md border border-indigo-500/20;
+  background: rgba(99,102,241,0.2);
+}
+.theme-oled .message-bubble-other {
+  @apply backdrop-blur-md border border-white/10;
+  background: rgba(255,255,255,0.06);
+}
+
+.message-echo {
+  @apply animate-pulse-echo;
+}
+
+.gift-glow {
+  @apply animate-gift-glow;
+}
+
+/* Voice wave bars */
+.voice-wave span {
+  @apply animate-voice-wave origin-bottom;
+}
+
+/* Чат: плавный скролл */
+.chat-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Глобальные скроллбары: ультра-тонкие 4px, прозрачные, скруглённые */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+.chat-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}

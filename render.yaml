@@ -1,0 +1,9 @@
+# Render Blueprint — деплой Bridge Messenger
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: bridge
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # PORT задаётся Render автоматически; при необходимости добавь CORS_ORIGINS в Dashboard
+    # Опционально: секреты в Dashboard (SECRET_KEY, DATABASE_URL при смене на PostgreSQL)
