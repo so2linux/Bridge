@@ -67,9 +67,12 @@ export default function VerifyEmail() {
         return
       }
       if (data.access_token && data.user) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('token', data.access_token)
+        }
         completeVerify(data.access_token, data.user)
         if (typeof window !== 'undefined') {
-          window.location.href = '/'
+          setTimeout(() => { window.location.href = '/' }, 500)
         } else {
           navigate('/', { replace: true })
         }

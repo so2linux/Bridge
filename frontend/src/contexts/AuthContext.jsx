@@ -4,6 +4,7 @@ const AuthContext = createContext(null)
 // Если фронт не через Vite proxy — задай в .env: VITE_API_URL=http://localhost:8000
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1'
 const ACCOUNTS_KEY = 'bridge_accounts'
+const TOKEN_KEY = 'token'
 const MAX_ACCOUNTS = 3
 
 function loadAccounts() {
@@ -27,7 +28,7 @@ export function AuthProvider({ children }) {
   })
 
   const currentAccount = accounts.find((a) => a.user?.id === currentId)
-  const token = currentAccount?.token ?? null
+  const token = currentAccount?.token ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null) ?? null
   const user = currentAccount?.user ?? null
 
   const setAccounts = useCallback((next) => {
@@ -78,6 +79,7 @@ export function AuthProvider({ children }) {
     if (!d.access_token || !d.user || !d.user.id) {
       throw new Error('Неверный ответ сервера: нет токена или пользователя')
     }
+    if (typeof localStorage !== 'undefined') localStorage.setItem(TOKEN_KEY, d.access_token)
     const acc = { token: d.access_token, user: d.user }
     setAccountsState((prev) => {
       const rest = prev.filter((a) => a.user?.id !== d.user.id)
@@ -107,6 +109,7 @@ export function AuthProvider({ children }) {
       throw new Error(msg || 'Ошибка регистрации')
     }
     const data = await res.json()
+    if (typeof localStorage !== 'undefined' && data.access_token) localStorage.setItem(TOKEN_KEY, data.access_token)
     const acc = { token: data.access_token, user: data.user }
     setAccountsState((prev) => {
       const rest = prev.filter((a) => a.user?.id !== data.user.id)
@@ -119,6 +122,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(TOKEN_KEY)
     setAccountsState((prev) => prev.filter((a) => a.user?.id !== currentId))
     const rest = loadAccounts().filter((a) => a.user?.id !== currentId)
     saveAccounts(rest)
@@ -126,6 +130,7 @@ export function AuthProvider({ children }) {
   }, [currentId])
 
   const logoutAll = useCallback(() => {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(TOKEN_KEY)
     setAccountsState([])
     setCurrentId(null)
     saveAccounts([])
@@ -137,6 +142,9 @@ export function AuthProvider({ children }) {
 
   const completeVerify = useCallback((accessToken, userData) => {
     if (!accessToken || !userData?.id) return
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(TOKEN_KEY, accessToken)
+    }
     const acc = { token: accessToken, user: userData }
     setAccountsState((prev) => {
       const rest = prev.filter((a) => a.user?.id !== userData.id)
@@ -148,7 +156,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const refreshUser = useCallback(async () => {
-    const t = token || currentAccount?.token
+    const t = token || currentAccount?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null)
     if (!t) return
     const res = await fetch(`${API}/users/me`, {
       headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' },
