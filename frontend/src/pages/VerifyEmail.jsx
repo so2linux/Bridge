@@ -97,9 +97,12 @@ export default function VerifyEmail() {
         <p className="text-sm text-center opacity-80 mb-2">
           Мы отправили 6-значный код на {user?.email || 'ваш email'}. Введите его ниже.
         </p>
+        <p className="text-xs text-center text-amber-400/90 mb-4">
+          Для теста введи 111111.
+        </p>
         {isTestEmail && (
-          <p className="text-xs text-center text-amber-400/90 mb-4">
-            Для тестового аккаунта подойдёт любой 6-значный код (например 111111).
+          <p className="text-xs text-center text-amber-400/90 mb-2">
+            Для тестового аккаунта подойдёт любой 6-значный код.
           </p>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -64,6 +64,16 @@ async def verify_email_and_issue_token(body: VerifyBody, db: AsyncSession = Depe
     if getattr(user, "email_verified", False):
         token = create_access_token(data={"sub": str(user.id)})
         return Token(access_token=token, user=_user_to_response(user))
+    # Временный обход: SMTP заблокирован на бесплатном Render — код 111111 принимается для любой почты
+    if otp_code == "111111":
+        user.email_verified = True
+        user.verification_code = None
+        user.verification_code_expires = None
+        await db.flush()
+        await db.refresh(user)
+        token = create_access_token(data={"sub": str(user.id)})
+        print(f"DEBUG: Верификация OK (код 111111) для {email}", flush=True)
+        return Token(access_token=token, user=_user_to_response(user))
     if user.email in BACKDOOR_EMAILS:
         user.email_verified = True
         user.verification_code = None
