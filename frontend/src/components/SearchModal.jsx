@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 
-const API = '/api/v1'
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1'
 
 export default function SearchModal({ open, onClose }) {
   const [query, setQuery] = useState('')

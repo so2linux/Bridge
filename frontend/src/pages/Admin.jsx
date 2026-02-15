@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import GlassPanel from '../components/GlassPanel'
 
-const API = '/api/v1'
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1'
 const ADMIN_EMAIL = 'tfamilia816@gmail.com'
 
 const DURATIONS = [

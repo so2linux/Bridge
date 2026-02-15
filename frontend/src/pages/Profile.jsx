@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import GlassPanel from '../components/GlassPanel'
 
-const API = '/api/v1'
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1'
 
 export default function Profile() {
   const { user, logout, fetchWithAuth, refreshUser, token } = useAuth()

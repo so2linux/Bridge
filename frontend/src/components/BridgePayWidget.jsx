@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 
-const API = '/api/v1'
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1'
 
 export default function BridgePayWidget({ chatId }) {
   const { user, token, fetchWithAuth, refreshUser } = useAuth()
