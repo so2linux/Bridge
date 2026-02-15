@@ -19,6 +19,7 @@ ENV PORT=8000
 COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
+# Папка frontend_dist обязательна для раздачи SPA в main.py
 COPY --from=builder /app/frontend/dist ./frontend_dist
 
 EXPOSE 8000

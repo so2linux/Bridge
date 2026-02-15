@@ -1,9 +1,10 @@
 from pathlib import Path
 from contextlib import asynccontextmanager
 from sqlalchemy import text
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.core.config import get_settings
 from app.api.v1 import api_router
@@ -20,6 +21,10 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 (STATIC_DIR / "avatars").mkdir(exist_ok=True)
 (STATIC_DIR / "stories").mkdir(exist_ok=True)
 (STATIC_DIR / "voice").mkdir(exist_ok=True)
+
+# Путь к собранному фронту (в Docker копируется из образа builder)
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend_dist"
+INDEX_HTML = FRONTEND_DIST / "index.html" if FRONTEND_DIST.exists() else None
 
 
 def _ensure_global_chat_sync(conn):
@@ -66,11 +71,6 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# При деплое (Docker) раздаём SPA из frontend_dist: статика + index.html для всех не-API путей
-FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend_dist"
-if FRONTEND_DIST.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
-
 
 @app.get("/health")
 def health():
@@ -101,3 +101,21 @@ async def websocket_endpoint(websocket: WebSocket):
         pass
     finally:
         manager.disconnect(websocket, user_id)
+
+
+# SPA: для /register, /chat, /verify-email и др. отдаём index.html (до mount, чтобы имел приоритет)
+@app.get("/{full_path:path}")
+async def spa_fallback(full_path: str):
+    if not FRONTEND_DIST.exists() or not INDEX_HTML or not INDEX_HTML.exists():
+        raise HTTPException(404)
+    if full_path.startswith("api/") or full_path.startswith("static/"):
+        raise HTTPException(404)
+    safe = (FRONTEND_DIST / full_path).resolve()
+    if safe.is_file() and str(safe).startswith(str(FRONTEND_DIST.resolve())):
+        return FileResponse(safe)
+    return FileResponse(INDEX_HTML)
+
+
+# После всех API-роутов — раздача фронта из frontend_dist (файлы + html=True для директорий)
+if FRONTEND_DIST.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
