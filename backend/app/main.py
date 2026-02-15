@@ -47,8 +47,8 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# При деплое (Docker) раздаём SPA из frontend_dist
-FRONTEND_DIST = Path(__file__).resolve().parent / "frontend_dist"
+# При деплое (Docker) раздаём SPA из frontend_dist: статика + index.html для всех не-API путей
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend_dist"
 if FRONTEND_DIST.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
 
