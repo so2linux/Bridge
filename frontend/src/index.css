@@ -16,11 +16,11 @@
   }
 }
 
-/* Glassmorphism iOS 26: матовое стекло, blur 30px, радиус 28px */
+/* Glassmorphism Bridge: полупрозрачное стекло, blur 10px, радиус 28px */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(30px) !important;
-  -webkit-backdrop-filter: blur(30px) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 28px;
   @apply transition-all duration-300;
@@ -37,9 +37,9 @@
 }
 
 .theme-light .glass-panel {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(30px) !important;
-  -webkit-backdrop-filter: blur(30px) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 28px;
 }
@@ -67,9 +67,9 @@
 }
 
 .theme-dark .glass-panel {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(30px) !important;
-  -webkit-backdrop-filter: blur(30px) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 28px;
 }
@@ -94,9 +94,9 @@
 }
 
 .theme-oled .glass-panel {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(30px) !important;
-  -webkit-backdrop-filter: blur(30px) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 28px;
 }
